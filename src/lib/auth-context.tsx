@@ -81,8 +81,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const { data: { session: s } } = await withTimeout(supabase.auth.getSession());
+        let { data: { session: s } } = await withTimeout(supabase.auth.getSession());
         if (!mounted) return;
+        // getSession só lê o token salvo no navegador; confirma no servidor que o
+        // usuário ainda existe. Se foi removido, descarta a sessão local.
+        if (s) {
+          // Falha de rede/timeout não derruba a sessão; só resposta de "usuário inválido".
+          const error = await withTimeout(supabase.auth.getUser())
+            .then((r) => r.error)
+            .catch(() => null);
+          if (!mounted) return;
+          if (error && [401, 403, 404].includes(error.status ?? 0)) {
+            await supabase.auth.signOut({ scope: "local" });
+            s = null;
+          }
+        }
         setSession(s);
         if (s?.user) await ensureBootstrap(s.user.id);
         setRole(s?.user ? await fetchUserRole(s.user.id).catch(() => null) : null);
