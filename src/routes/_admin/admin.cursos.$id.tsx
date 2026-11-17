@@ -954,8 +954,8 @@ function AvaliacaoTab({
         },
         body: JSON.stringify({ course_id: courseId }),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.error ?? "Falha ao gerar questões");
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error ?? `Falha ao gerar questões (${res.status})`);
       const qs = (body.questions ?? []) as GeneratedQuestion[];
       if (!qs.length) throw new Error("Nenhuma questão retornada");
       setGenerated(qs);

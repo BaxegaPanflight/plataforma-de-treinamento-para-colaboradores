@@ -185,8 +185,9 @@ function Alunos() {
       body: JSON.stringify({ email: inviteEmail, nome: inviteNome }),
     });
     setInviting(false);
-    const body = await res.json();
-    if (!res.ok) return toast.error(body.error ?? "Erro ao enviar convite");
+    // A função pode responder texto simples (ex.: "Unauthorized"), não só JSON.
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    if (!res.ok) return toast.error(body.error ?? `Erro ao enviar convite (${res.status})`);
     toast.success(`Convite enviado para ${inviteEmail}`);
     logAudit("aluno_convidado", "invitations", null, { email: inviteEmail, nome: inviteNome });
     setInviteNome(""); setInviteEmail(""); setInviteOpen(false);

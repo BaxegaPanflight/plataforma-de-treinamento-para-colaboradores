@@ -51,8 +51,9 @@ function Equipe() {
       body: JSON.stringify({ email, nome }),
     });
     setLoading(false);
-    const body = await res.json();
-    if (!res.ok) return toast.error(body.error ?? "Erro ao enviar convite");
+    // A função pode responder texto simples (ex.: "Unauthorized"), não só JSON.
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    if (!res.ok) return toast.error(body.error ?? `Erro ao enviar convite (${res.status})`);
     toast.success(`Convite enviado para ${email}`);
     setEmail(""); setNome(""); setOpen(false);
     load();
