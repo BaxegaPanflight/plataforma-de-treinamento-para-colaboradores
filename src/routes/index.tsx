@@ -6,8 +6,8 @@ import { ArrowRight, Award, ShieldCheck, Sparkles, BarChart3, BookOpen, Users } 
 export const Route = createFileRoute("/")({ component: Landing });
 
 function Landing() {
-  const { loading, user, role } = useAuth();
-  if (loading) return <div className="min-h-screen grid place-items-center text-muted-foreground">Carregando…</div>;
+  const { loading, roleLoading, user, role } = useAuth();
+  if (loading || (user && roleLoading)) return <div className="min-h-screen grid place-items-center text-muted-foreground">Carregando…</div>;
   if (user) {
     if (role === "admin" || role === "gestor") return <Navigate to="/admin/dashboard" />;
     return <Navigate to="/aluno/catalogo" />;

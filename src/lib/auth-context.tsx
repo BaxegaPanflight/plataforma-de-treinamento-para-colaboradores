@@ -41,17 +41,21 @@ interface AuthCtx {
   session: Session | null;
   role: AppRole | null;
   loading: boolean;
+  // true enquanto o papel do usuário logado ainda não foi resolvido
+  roleLoading: boolean;
   signOut: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx>({
-  user: null, session: null, role: null, loading: true, signOut: async () => {},
+  user: null, session: null, role: null, loading: true, roleLoading: true,
+  signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -60,13 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       setSession(s);
       if (s?.user) {
+        setRoleLoading(true);
         setTimeout(async () => {
           await ensureBootstrap(s.user.id);
           const nextRole = await fetchUserRole(s.user.id).catch(() => null);
-          if (mounted) setRole(nextRole);
+          if (mounted) {
+            setRole(nextRole);
+            setRoleLoading(false);
+          }
         }, 0);
       } else {
         setRole(null);
+        setRoleLoading(false);
       }
     });
 
@@ -77,10 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(s);
         if (s?.user) await ensureBootstrap(s.user.id);
         setRole(s?.user ? await fetchUserRole(s.user.id).catch(() => null) : null);
+        setRoleLoading(false);
       } catch {
         if (!mounted) return;
         setSession(null);
         setRole(null);
+        setRoleLoading(false);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -98,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       role,
       loading,
+      roleLoading,
       signOut: async () => { await supabase.auth.signOut(); },
     }}>{children}</Ctx.Provider>
   );
